@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/tabLayoutFragment">
+
+    <fragment
+        android:id="@+id/ExerciseListFragment"
+        android:name="com.example.workout.ui.ExerciseListEditorFragment"
+        android:label="ExerciseListFragment">
+        <argument
+            android:name="categoryName"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="categoryId"
+            app:argType="integer" />
+
+    </fragment>
+    <fragment
+        android:id="@+id/detailsFragment"
+        android:name="com.example.workout.ui.DetailsFragment"
+        android:label="fragment_details"
+        tools:layout="@layout/fragment_details">
+
+        <argument
+            android:name="exerciseName"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="exerciseDescription"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="exerciseImage"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="categoryName"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="categoryImage"
+            app:argType="integer" />
+    </fragment>
+    <fragment
+        android:id="@+id/tabLayoutFragment"
+        android:name="com.example.workout.ui.TabLayoutFragment"
+        android:label="TabLayoutFragment">
+        <action
+            android:id="@+id/action_tabLayoutFragment_to_workoutEditorFragment"
+            app:destination="@id/workoutEditorFragment" />
+        <action
+            android:id="@+id/action_tabLayoutFragment_to_workoutEditorFragment2"
+            app:destination="@id/workoutEditorFragment" />
+        <action
+            android:id="@+id/action_tabLayoutFragment_to_exerciseListLibraryFragment"
+            app:destination="@id/exerciseListLibraryFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/workoutEditorFragment"
+        android:name="com.example.workout.ui.WorkoutEditorFragment"
+        android:label="workout_editor_fragment"
+        tools:layout="@layout/fragment_workout_editor">
+
+        <argument
+            android:name="workoutId"
+            android:defaultValue="-1L"
+            app:argType="long" />
+        <action
+            android:id="@+id/action_workoutEditorFragment_to_categoryEditorFragment2"
+            app:destination="@id/categoryEditorFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/categoryEditorFragment"
+        android:name="com.example.workout.ui.CategoryEditorFragment"
+        android:label="CategoryEditorFragment" >
+        <action
+            android:id="@+id/action_categoryEditorFragment_to_ExerciseListFragment"
+            app:destination="@id/ExerciseListFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/exerciseListLibraryFragment"
+        android:name="com.example.workout.ui.ExerciseListLibraryFragment"
+        android:label="ExerciseListLibraryFragment" >
+        <action
+            android:id="@+id/action_exerciseListLibraryFragment_to_detailsFragment"
+            app:destination="@id/detailsFragment" />
+        <argument
+            android:name="categoryName"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="categoryId"
+            app:argType="integer" />
+        <argument
+            android:name="categoryImage"
+            app:argType="integer" />
+    </fragment>
+</navigation>
