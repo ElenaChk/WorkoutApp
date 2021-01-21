@@ -58,15 +58,14 @@ class WorkoutEditorFragment : Fragment() {
 
     private var exerciseListAdapter: ExerciseListLibraryAdapter? = null
 
-    private var modifiedList: MutableList<ExerciseJson>? = null
+    private var currentExercises: MutableList<ExerciseJson>? = null
 
-    private var workoutChanged = false
+    private var isWorkoutChanged = false
 
     private val touchListener = View.OnTouchListener { v, event ->
         when (event?.action) {
             MotionEvent.ACTION_DOWN -> {
-                workoutChanged = true
-//                v?.performClick()
+                isWorkoutChanged = true
             }
         }
         false
@@ -91,7 +90,7 @@ class WorkoutEditorFragment : Fragment() {
 
     private val itemTouchHelperCallback = object : ItemTouchHelper.Callback() {
         override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
-            return makeMovementFlags(UP or DOWN, 0)
+            return makeMovementFlags(UP or DOWN, RIGHT)
         }
 
         override fun onMove(
@@ -101,33 +100,23 @@ class WorkoutEditorFragment : Fragment() {
         ): Boolean {
             val from = viewHolder.adapterPosition
             val to = target.adapterPosition
-            if (workoutEditorViewModel.exerciseList.isNullOrEmpty()) {
-//                modifiedList = exerciseListViewModel.selectedExercises
-            } else {
-                modifiedList = workoutEditorViewModel.exerciseList?.toMutableList()
-            }
-            Log.v("rearrangedList", "$modifiedList")
             if (from < to) {
                 for (item in from until to) {
-                    Collections.swap(modifiedList!!, item, item.plus(1))
+                    Collections.swap(currentExercises!!, item, item.plus(1))
                 }
             } else {
                 for (item in from downTo to + 1) {
-                    Collections.swap(modifiedList!!, item, item.minus(1))
+                    Collections.swap(currentExercises!!, item, item.minus(1))
                 }
             }
-//            rearrangedList?.removeAt(from )
-//            if (to < from) {
-//                rearrangedList?.add(to,   rearrangedList!![from])
-//            } else {
-//                rearrangedList?.add(to - 1,   rearrangedList!![from])
-//            }
             exerciseListAdapter?.notifyItemMoved(viewHolder.adapterPosition, target.adapterPosition)
             return true
         }
 
         override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-            TODO("Not yet implemented")
+            val position = viewHolder.adapterPosition
+            currentExercises?.removeAt(position)
+            exerciseListAdapter?.notifyItemRemoved(position)
         }
 
         override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
@@ -140,8 +129,7 @@ class WorkoutEditorFragment : Fragment() {
         override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
             super.clearView(recyclerView, viewHolder)
             viewHolder.itemView.alpha = 1.0f
-            Log.v("rearrangedList", "$modifiedList")
-            exerciseListModified()
+            isWorkoutChanged = true
         }
     }
     private val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
@@ -156,7 +144,7 @@ class WorkoutEditorFragment : Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (!workoutChanged) {
+                if (!isWorkoutChanged) {
                     navController.navigateUp()
                 } else {
                     showUnsavedChangesDialog()
@@ -187,29 +175,42 @@ class WorkoutEditorFragment : Fragment() {
 
     private fun displayContent() {
         if (args.workoutId != NO_WORKOUT_ID) {
-            lifecycleScope.launch {
-                val currentWorkout = workoutEditorViewModel.getCurrentWorkout(args.workoutId)
-                binding.toolbar.title = "Edit a Workout"
-                binding.editWorkoutName.setText(currentWorkout?.workoutName)
-                binding.editWorkoutDuration.setText(currentWorkout?.duration)
-                Log.v("exerciseList", "displayContent ${currentWorkout?.exercisesList}")
-                if (exerciseListViewModel.selectedExercises.isNotEmpty()) {
-                    workoutEditorViewModel.exerciseList = workoutEditorViewModel.exerciseList?.plus(
-                        exerciseListViewModel.selectedExercises
-                    )?.toMutableList()
-                }
-                exerciseListAdapter?.submitList(workoutEditorViewModel.exerciseList)
-            }
+            displayExistingWorkout()
         } else {
-            exerciseListAdapter?.submitList(exerciseListViewModel.selectedExercises)
-            binding.toolbar.menu.findItem(R.id.action_delete).isVisible = false
+            displayNewWorkout()
+        }
+    }
+
+    private fun displayExistingWorkout() {
+        lifecycleScope.launch {
+            val currentWorkout = workoutEditorViewModel.getCurrentWorkout(args.workoutId)
+            binding.toolbar.title = "Edit a Workout"
+            binding.editWorkoutName.setText(currentWorkout?.workoutName)
+            binding.editWorkoutDuration.setText(currentWorkout?.duration)
+            displayExercises()
+        }
+    }
+
+    private fun displayNewWorkout() {
+        currentExercises = exerciseListViewModel.selectedExercises
+        exerciseListAdapter?.submitList(currentExercises)
+        binding.toolbar.menu.findItem(R.id.action_delete).isVisible = false
+    }
+
+    private fun displayExercises() {
+        if (exerciseListViewModel.selectedExercises.isNotEmpty()) {
+            currentExercises = workoutEditorViewModel.exerciseList?.plus(exerciseListViewModel.selectedExercises) as MutableList<ExerciseJson>?
+            exerciseListAdapter?.submitList(currentExercises)
+        } else {
+            currentExercises = workoutEditorViewModel.exerciseList as MutableList<ExerciseJson>?
+            exerciseListAdapter?.submitList(currentExercises)
         }
     }
 
     private fun initToolbar() {
         binding.toolbar.apply {
             setNavigationOnClickListener {
-                if (!workoutChanged) {
+                if (!isWorkoutChanged) {
                     navController.navigateUp()
                 } else {
                     showUnsavedChangesDialog()
@@ -260,28 +261,40 @@ class WorkoutEditorFragment : Fragment() {
         val workoutName = binding.editWorkoutName.text.toString().trim()
         val workoutDuration = binding.editWorkoutDuration.text.toString().trim()
         if (args.workoutId == NO_WORKOUT_ID) {
-            when {
-                workoutName.isEmpty() -> Toast.makeText(requireContext(), "Name can't be empty!", Toast.LENGTH_LONG)
-                    .show()
-                workoutDuration.isEmpty() -> Toast.makeText(
-                    requireContext(),
-                    "Duration can't be empty!",
-                    Toast.LENGTH_LONG
-                ).show()
-                else -> {
-                    workoutEditorViewModel.addNewWorkout(workoutName, workoutDuration, exerciseListViewModel.selectedExercises)
-                    Toast.makeText(context, "Workout added", Toast.LENGTH_LONG).show()
-                    navController.navigateUp()
-                }
-            }
-        } else if (workoutChanged) {
-            workoutEditorViewModel.updateWorkout(workoutName, workoutDuration)
-            Toast.makeText(context, "Workout updated", Toast.LENGTH_LONG).show()
+            saveNewWorkout(workoutName, workoutDuration)
+        } else {
+            updateWorkout(workoutName, workoutDuration)
+        }
+    }
+
+    private fun saveNewWorkout(name: String, duration: String) {
+        if (!isNameEmpty(name)) {
+            currentExercises?.let { workoutEditorViewModel.addNewWorkout(name, duration, it) }
             navController.navigateUp()
+        } else return
+    }
+
+    private fun updateWorkout(name: String, duration: String) {
+        if (isWorkoutChanged) {
+            if (!isNameEmpty(name)) {
+                currentExercises?.let { workoutEditorViewModel.updateWorkout(name, duration, it) }
+                navController.navigateUp()
+            } else return
         } else {
             navController.navigateUp()
         }
-//        exerciseListViewModel.clearSelectedExercises()
+    }
+
+    private fun isNameEmpty(name: String): Boolean {
+        return when {
+            name.isEmpty() -> {
+                Toast.makeText(requireContext(), "Name can't be empty!", Toast.LENGTH_LONG).show()
+                true
+            }
+            else -> {
+                false
+            }
+        }
     }
 
     private fun showDeleteConfirmationDialog() {
@@ -301,7 +314,6 @@ class WorkoutEditorFragment : Fragment() {
 
     private fun deleteWorkout(workout: Workout) {
         workoutEditorViewModel.deleteWorkout(workout)
-        Toast.makeText(context, "Workout deleted", Toast.LENGTH_LONG).show()
         exerciseListViewModel.clearSelectedExercises()
         navController.navigateUp()
     }
@@ -349,22 +361,4 @@ class WorkoutEditorFragment : Fragment() {
             show()
         }
     }
-
-    private fun exerciseListModified() {
-        if (modifiedList == workoutEditorViewModel.exerciseList) {
-            return
-        } else {
-            workoutEditorViewModel.exerciseList = modifiedList
-            Log.v("exerciseListModified()", "called")
-            workoutChanged = true
-        }
-    }
-
-//    private fun showNoWorkoutSnackbar() {
-//        val snackbar = Snackbar.make(requireView(), "Workout doesn't exist", Snackbar.LENGTH_LONG)
-//        snackbar.setAction("Retry") {
-//            viewLifecycleOwner.lifecycleScope.launch { currentWorkout = viewModel.getCurrentWorkout(args.workoutId) }
-//        }
-//        snackbar.show()
-//    }
 }

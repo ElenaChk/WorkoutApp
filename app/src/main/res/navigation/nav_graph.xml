@@ -80,7 +80,8 @@
         android:label="CategoryEditorFragment" >
         <action
             android:id="@+id/action_categoryEditorFragment_to_ExerciseListFragment"
-            app:destination="@id/ExerciseListFragment" />
+            app:destination="@id/ExerciseListFragment"
+            app:popUpTo="@id/workoutEditorFragment" />
     </fragment>
     <fragment
         android:id="@+id/exerciseListLibraryFragment"

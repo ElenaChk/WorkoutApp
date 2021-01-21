@@ -1,8 +1,6 @@
 package com.example.workout.viewmodels
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workout.data.WorkoutRepository
@@ -18,8 +16,6 @@ class WorkoutEditorViewModel @Inject constructor(
     var exerciseList: List<ExerciseJson>? = null
 
     var currentWorkout: Workout? = null
-
-//    val selectedExercises = arrayListOf<ExerciseRoom>()
 
     fun addNewWorkout(workoutName: String, workoutDuration: String, list: List<ExerciseJson>) {
         viewModelScope.launch {
@@ -41,11 +37,11 @@ class WorkoutEditorViewModel @Inject constructor(
         }
     }
 
-    fun updateWorkout(workoutName: String, workoutDuration: String) {
+    fun updateWorkout(workoutName: String, workoutDuration: String, list: List<ExerciseJson>) {
         Log.d("updateWorkout", "updateWorkout")
         currentWorkout?.workoutName = workoutName
         currentWorkout?.duration = workoutDuration
-        currentWorkout?.exercisesList = exerciseList
+        currentWorkout?.exercisesList = list
         viewModelScope.launch {
             workoutRepository.updateWorkout(currentWorkout ?: return@launch)
         }
