@@ -26,8 +26,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.workout.App
 import com.example.workout.MainActivity
 import com.example.workout.R
-import com.example.workout.adapters.ExerciseListLibraryAdapter
 import com.example.workout.adapters.LibraryOnClickListener
+import com.example.workout.adapters.SelectedExercisesAdapter
 import com.example.workout.data.database.Workout
 import com.example.workout.data.model.ExerciseJson
 import com.example.workout.databinding.FragmentWorkoutEditorBinding
@@ -56,7 +56,7 @@ class WorkoutEditorFragment : Fragment() {
 
     private val args: WorkoutEditorFragmentArgs by navArgs()
 
-    private var exerciseListAdapter: ExerciseListLibraryAdapter? = null
+    private var selectedExercisesAdapter: SelectedExercisesAdapter? = null
 
     private var currentExercises: MutableList<ExerciseJson>? = null
 
@@ -109,14 +109,14 @@ class WorkoutEditorFragment : Fragment() {
                     Collections.swap(currentExercises!!, item, item.minus(1))
                 }
             }
-            exerciseListAdapter?.notifyItemMoved(viewHolder.adapterPosition, target.adapterPosition)
+            selectedExercisesAdapter?.notifyItemMoved(viewHolder.adapterPosition, target.adapterPosition)
             return true
         }
 
         override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
             val position = viewHolder.adapterPosition
             currentExercises?.removeAt(position)
-            exerciseListAdapter?.notifyItemRemoved(position)
+            selectedExercisesAdapter?.notifyItemRemoved(position)
         }
 
         override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
@@ -185,25 +185,25 @@ class WorkoutEditorFragment : Fragment() {
         lifecycleScope.launch {
             val currentWorkout = workoutEditorViewModel.getCurrentWorkout(args.workoutId)
             binding.toolbar.title = "Edit a Workout"
-            binding.editWorkoutName.setText(currentWorkout?.workoutName)
-            binding.editWorkoutDuration.setText(currentWorkout?.duration)
+            binding.editWorkoutName.text = currentWorkout?.workoutName
+            binding.editWorkoutDuration.text = currentWorkout?.duration
             displayExercises()
         }
     }
 
     private fun displayNewWorkout() {
         currentExercises = exerciseListViewModel.selectedExercises
-        exerciseListAdapter?.submitList(currentExercises)
+        selectedExercisesAdapter?.submitList(currentExercises)
         binding.toolbar.menu.findItem(R.id.action_delete).isVisible = false
     }
 
     private fun displayExercises() {
         if (exerciseListViewModel.selectedExercises.isNotEmpty()) {
             currentExercises = workoutEditorViewModel.exerciseList?.plus(exerciseListViewModel.selectedExercises) as MutableList<ExerciseJson>?
-            exerciseListAdapter?.submitList(currentExercises)
+            selectedExercisesAdapter?.submitList(currentExercises)
         } else {
             currentExercises = workoutEditorViewModel.exerciseList as MutableList<ExerciseJson>?
-            exerciseListAdapter?.submitList(currentExercises)
+            selectedExercisesAdapter?.submitList(currentExercises)
         }
     }
 
@@ -233,11 +233,11 @@ class WorkoutEditorFragment : Fragment() {
     }
 
     private fun FragmentWorkoutEditorBinding.initViews() {
-        exerciseListAdapter = ExerciseListLibraryAdapter(onClickListener)
+        selectedExercisesAdapter = SelectedExercisesAdapter(onClickListener)
         exercisesList.apply {
             layoutManager = LinearLayoutManager(requireActivity())
             addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
-            adapter = exerciseListAdapter
+            adapter = selectedExercisesAdapter
         }
         itemTouchHelper.attachToRecyclerView(exercisesList)
         addExercises.setOnClickListener {

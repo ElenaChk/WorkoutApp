@@ -1,8 +1,5 @@
 package com.example.workout.data.model
 
-import androidx.databinding.adapters.Converters
-import androidx.room.TypeConverters
-import com.example.workout.data.database.ImageConverters
 import com.squareup.moshi.Json
 
 data class ExerciseListJson(

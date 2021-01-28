@@ -29,8 +29,8 @@ class ExerciseListLibraryAdapter(private val libraryOnClickListener: LibraryOnCl
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val workout = getItem(position)
-        holder.bind(workout)
+        val exercise = getItem(position)
+        holder.bind(exercise)
     }
 }
 
