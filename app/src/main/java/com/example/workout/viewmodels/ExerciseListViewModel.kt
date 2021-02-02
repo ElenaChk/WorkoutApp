@@ -1,6 +1,5 @@
 package com.example.workout.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -24,22 +23,12 @@ class ExerciseListViewModel @Inject constructor(private val apiService: ApiServi
 
     fun getListExercise(categoryId: Int) {
         viewModelScope.launch {
-            val exercises = apiService.getExercise(100).results
-            val list = mutableListOf<ExerciseJson>()
-            for (item in exercises) {
-                val isLanguageENG = item?.language?.LangId == ENG_LANG_ID
-                val isForThisCategory = item?.category?.categoryId == categoryId
-                if (item != null && isLanguageENG && isForThisCategory) {
-                    list.add(item)
-                }
-            }
-            _exercises.value = list
+            val exercises = apiService.getExercise(ENG_LANG_ID, categoryId, 200).results
+            _exercises.value = exercises
         }
     }
     fun setSelectedExercises(list: MutableList<ExerciseJson>){
         selectedExercises.addAll(list)
-        Log.v("ExerciseListViewModel", "${selectedExercises.size}")
-
     }
 
     fun clearSelectedExercises(){
